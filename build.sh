@@ -1,0 +1,4 @@
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCPR_USE_SYSTEM_CURL=OFF -DBUILD_SHARED_LIBS=OFF -DCPR_ENABLE_SSL=OFF
+make -j16
+make install

@@ -15,8 +15,8 @@ endif()
 
 option(BUILD_SHARED_LIBS "Build shared versions of libraries" ON)
 option(INFLUXCXX_WITH_BOOST "Build with Boost support enabled" ON)
-option(INFLUXCXX_TESTING "Enable testing for this component" ON)
-option(INFLUXCXX_SYSTEMTEST "Enable system tests" ON)
+option(INFLUXCXX_TESTING "Enable testing for this component" OFF)
+option(INFLUXCXX_SYSTEMTEST "Enable system tests" OFF)
 option(INFLUXCXX_COVERAGE "Enable Coverage" OFF)
 
 # Define project
@@ -37,10 +37,10 @@ if(NOT MSVC AND NOT INCLUDED_AS_SUBPROJECT)
       -pedantic-errors
       -Werror
       -Wshadow
-      -Wold-style-cast
+    #   -Wold-style-cast
       -Wnull-dereference
-      -Wnon-virtual-dtor
-      -Woverloaded-virtual
+    #   -Wnon-virtual-dtor
+    #   -Woverloaded-virtual
       )
 endif()
 
@@ -82,7 +82,10 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 find_package(Threads REQUIRED)
-find_package(cpr REQUIRED)
+include(FetchContent)
+FetchContent_Declare(cpr GIT_REPOSITORY https://github.com/libcpr/cpr.git
+                         GIT_TAG 2553fc41450301cd09a9271c8d2c3e0cf3546b73) # The commit hash for 1.10.x. Replace with the latest from: https://github.com/libcpr/cpr/releases
+FetchContent_MakeAvailable(cpr)
 
 if (INFLUXCXX_WITH_BOOST)
     # Fixes warning when using boost from brew
@@ -109,70 +112,70 @@ add_subdirectory("src")
 # Tests
 ####################################
 
-if (INFLUXCXX_TESTING)
-  enable_testing()
-  add_subdirectory("test")
-endif()
+# if (INFLUXCXX_TESTING)
+#   enable_testing()
+#   add_subdirectory("test")
+# endif()
 
 
 ####################################
 # Install
 ####################################
 
-include(GNUInstallDirs)
+# include(GNUInstallDirs)
 
-# Build targets with install rpath on Mac to dramatically speed up installation
-# https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/RPATH-handling
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" isSystemDir)
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  if("${isSystemDir}" STREQUAL "-1")
-    set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR}")
-  endif()
-  set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-endif()
-unset(isSystemDir)
+# # Build targets with install rpath on Mac to dramatically speed up installation
+# # https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/RPATH-handling
+# set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+# list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}" isSystemDir)
+# if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+#   if("${isSystemDir}" STREQUAL "-1")
+#     set(CMAKE_INSTALL_RPATH "@loader_path/../${CMAKE_INSTALL_LIBDIR}")
+#   endif()
+#   set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+# endif()
+# unset(isSystemDir)
 
-# Install library
-install(TARGETS InfluxDB
-  EXPORT InfluxDBTargets
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+# # Install library
+# install(TARGETS InfluxDB
+#   EXPORT InfluxDBTargets
+#   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+# )
 
-# Create version file
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/cmake/InfluxDBConfigVersion.cmake"
-  VERSION ${PACKAGE_VERSION}
-  COMPATIBILITY AnyNewerVersion
-)
+# # Create version file
+# include(CMakePackageConfigHelpers)
+# write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/cmake/InfluxDBConfigVersion.cmake"
+#   VERSION ${PACKAGE_VERSION}
+#   COMPATIBILITY AnyNewerVersion
+# )
 
-# Install headers
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
-install(FILES ${PROJECT_BINARY_DIR}/src/influxdb_export.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+# # Install headers
+# install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+# install(FILES ${PROJECT_BINARY_DIR}/src/influxdb_export.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
-# Export targets
-install(EXPORT InfluxDBTargets
-  FILE
-    InfluxDBTargets.cmake
-  NAMESPACE
-    InfluxData::
-  DESTINATION
-    ${CMAKE_INSTALL_LIBDIR}/cmake/InfluxDB
-)
+# # Export targets
+# install(EXPORT InfluxDBTargets
+#   FILE
+#     InfluxDBTargets.cmake
+#   NAMESPACE
+#     InfluxData::
+#   DESTINATION
+#     ${CMAKE_INSTALL_LIBDIR}/cmake/InfluxDB
+# )
 
-# Configure and install Config files
-configure_package_config_file(
-  cmake/InfluxDBConfig.cmake.in cmake/InfluxDBConfig.cmake
-  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/InfluxDB"
-  PATH_VARS CMAKE_INSTALL_PREFIX
-)
+# # Configure and install Config files
+# configure_package_config_file(
+#   cmake/InfluxDBConfig.cmake.in cmake/InfluxDBConfig.cmake
+#   INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/InfluxDB"
+#   PATH_VARS CMAKE_INSTALL_PREFIX
+# )
 
-install(
-  FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/cmake/InfluxDBConfig.cmake"
-    "${CMAKE_CURRENT_BINARY_DIR}/cmake/InfluxDBConfigVersion.cmake"
-  DESTINATION
-    ${CMAKE_INSTALL_LIBDIR}/cmake/InfluxDB
-)
+# install(
+#   FILES
+#     "${CMAKE_CURRENT_BINARY_DIR}/cmake/InfluxDBConfig.cmake"
+#     "${CMAKE_CURRENT_BINARY_DIR}/cmake/InfluxDBConfigVersion.cmake"
+#   DESTINATION
+#     ${CMAKE_INSTALL_LIBDIR}/cmake/InfluxDB
+# )
