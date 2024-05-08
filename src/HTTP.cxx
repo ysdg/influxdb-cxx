@@ -67,22 +67,43 @@ namespace influxdb::transports
             {
                 throw InfluxDBException{"No Database specified"};
             }
-            return url.substr(dbParameterPosition + 4);
+			const auto dbParameterPositionEnd = url.find("&", dbParameterPosition+1);
+            return url.substr(dbParameterPosition + 4, dbParameterPositionEnd - dbParameterPosition - 4);
+        }
+        std::string parseMs(const std::string& url)
+        {
+            const auto msParameterPosition = url.find("&ms=");
+
+            if (msParameterPosition == std::string::npos)
+            {
+                return "";
+            }
+			const auto msParameterPositionEnd = url.find("&", msParameterPosition+1);
+            return url.substr(msParameterPosition + 4, msParameterPositionEnd - msParameterPosition - 4);
         }
     }
 
 
     HTTP::HTTP(const std::string& url, uint32_t timeout)
-        : endpointUrl(parseUrl(url)), databaseName(parseDatabaseName(url))
+        : endpointUrl(parseUrl(url))
+		, databaseName(parseDatabaseName(url))
+		, timePrecision(parseMs(url))
     {
-        session.SetTimeout(cpr::Timeout{std::chrono::milliseconds{timeout}});
+        session.SetTimeout(cpr::Timeout{std::chrono::seconds{timeout}});
         session.SetConnectTimeout(cpr::ConnectTimeout{std::chrono::seconds{10}});
     }
 
     std::string HTTP::query(const std::string& query)
     {
         session.SetUrl(cpr::Url{endpointUrl + "/query"});
-        session.SetParameters(cpr::Parameters{{"db", databaseName}, {"q", query}});
+		if(timePrecision.empty())
+		{
+        	session.SetParameters(cpr::Parameters{{"db", databaseName}, {"q", query}});
+		}
+		else
+		{
+			session.SetParameters(cpr::Parameters{{"db", databaseName}, {"ms", timePrecision}, {"q", query}});
+		}
 
         const auto response = session.Get();
         checkResponse(response);
@@ -125,8 +146,14 @@ namespace influxdb::transports
     std::string HTTP::execute(const std::string& cmd)
     {
         session.SetUrl(cpr::Url{endpointUrl + "/query"});
-        session.SetParameters(cpr::Parameters{{"db", databaseName}, {"q", cmd}});
-
+		if(timePrecision.empty())
+		{
+        	session.SetParameters(cpr::Parameters{{"db", databaseName}, {"q", cmd}});
+		}
+		else
+		{
+			session.SetParameters(cpr::Parameters{{"db", databaseName}, {"ms", timePrecision}, {"q", cmd}});
+		}
         const auto response = session.Get();
         checkResponse(response);
 

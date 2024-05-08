@@ -74,6 +74,7 @@ namespace influxdb::transports
     private:
         std::string endpointUrl;
         std::string databaseName;
+        std::string timePrecision;
         cpr::Session session;
     };
 
