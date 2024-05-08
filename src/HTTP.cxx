@@ -75,7 +75,7 @@ namespace influxdb::transports
     HTTP::HTTP(const std::string& url, uint32_t timeout)
         : endpointUrl(parseUrl(url)), databaseName(parseDatabaseName(url))
     {
-        session.SetTimeout(cpr::Timeout{std::chrono::seconds{timeout}});
+        session.SetTimeout(cpr::Timeout{std::chrono::milliseconds{timeout}});
         session.SetConnectTimeout(cpr::ConnectTimeout{std::chrono::seconds{10}});
     }
 
